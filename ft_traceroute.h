@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/05 16:50:28 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/08 20:32:55 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/09 12:30:40 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,13 +77,14 @@ void						hexdump(void *mem, unsigned int len);
 void						get_opt(t_env *e, int argc, char **argv);
 
 void						display_header_info(t_env *env);
-void						display_response(t_env *e, int bytes_receive,
-								int seq, double duration);
+void						display_response(t_env *e, int ttl, struct sockaddr_in *addr);
 
 void						ft_sleep(uint32_t sec);
 uint16_t					swap_byte16_t(uint16_t val);
 double						get_time_elapsed(struct timeval *t1,
 								struct timeval *t2);
+int							is_same_host(struct sockaddr_in *addr1,
+								struct sockaddr_in *addr2);
 
 void						sig_handler(int sig);
 

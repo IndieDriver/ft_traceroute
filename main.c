@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/05 16:49:46 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/08 20:38:56 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/09 17:32:45 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,12 +35,8 @@ void	get_sockaddr(t_env *e, const char *addr)
 		sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
 		if (sfd == -1)
 			continue;
-		if (connect(sfd, rp->ai_addr, rp->ai_addrlen) == 0)
-		{
-			close(sfd);
-			break;
-		}
 		close(sfd);
+		break ;
 	}
 	if (rp == NULL) {
 		fprintf(stderr, "Could not bind\n");
@@ -81,53 +77,32 @@ void	ping_send(t_env *e, struct timeval *send_time, uint16_t sequence, uint32_t 
 
 int		ping_receive(t_env *e, struct timeval send_time, uint16_t sequence)
 {
-	struct timeval	received_time;
-	t_rpacket		received;
-	struct msghdr	msg_header;
-	struct iovec	iovec;
-	char			control[64];
-	int				byte_recv;
-	double			time_elapsed;
+	struct sockaddr_storage	sender;
+	socklen_t				fromlen;
+	t_rpacket				received;
+	int						byte_recv;
 
+	(void)send_time;
 	(void)sequence;
-	ft_memset(&msg_header, 0, sizeof(struct msghdr));
-	ft_memset(&iovec, 0, sizeof(struct iovec));
-	ft_memset(&received, 0, sizeof(t_rpacket));
-	iovec.iov_base = &received;
-	iovec.iov_len = sizeof(t_rpacket);
-	msg_header.msg_name = e->addr->ai_addr;
-	msg_header.msg_namelen = e->addr->ai_addrlen;
-	msg_header.msg_iov = &iovec;
-	msg_header.msg_iovlen = 1;
-	msg_header.msg_control = &control;
-	msg_header.msg_controllen = sizeof(char) * 64;
-	msg_header.msg_flags = 0;
 	if (e->has_timeout)
 	{
 		e->has_timeout = 0;
 		alarm(0);
+		display_response(e, sequence, NULL);
 		return (1);
 	}
-	if ((byte_recv = recvmsg(e->socket, &msg_header, MSG_DONTWAIT)))
+	fromlen = sizeof(struct sockaddr_storage);
+	if ((byte_recv = recvfrom(e->socket, &received, sizeof(t_rpacket),
+					MSG_DONTWAIT, (struct sockaddr*)&sender, &fromlen)) > 0)
 	{
-		if (swap_byte16_t(received.icmp.icmp_id) == getpid())
-		{
-			e->received++;
-			gettimeofday (&received_time, NULL);
-			alarm(0);
-			ft_sleep(1);
-			time_elapsed = get_time_elapsed(&send_time, &received_time);
-			e->sum += time_elapsed;
-			e->sum_square += time_elapsed * time_elapsed;
-			e->ping_min = MIN(e->ping_min, time_elapsed);
-			e->ping_max = MAX(e->ping_max, time_elapsed);
-			/*
-			display_response(e, byte_recv - sizeof(struct iphdr),
-				sequence,
-				//swap_byte16_t(received.icmp.icmp_seq),
-				time_elapsed); */
-			return (1);
-		}
+		if (received.icmp.icmp_type == ICMP_ECHO)
+			return (0);
+		display_response(e, sequence, (struct sockaddr_in*)&sender);
+		if (received.icmp.icmp_type == ICMP_ECHOREPLY)
+			exit(0);
+		alarm(0);
+		ft_sleep(1);
+		return (1);
 	}
 	return (0);
 }
@@ -140,7 +115,7 @@ void	ping_host(t_env *e)
 	sequence = 0;
 	gettimeofday (&e->start_time, NULL);
 	ping_connect(e);
-	while (1)
+	while (sequence <= 30)
 	{
 		sequence++;
 		ping_send(e, &send_time, (uint16_t)sequence, sequence);
@@ -165,7 +140,6 @@ int main(int argc, char *argv[])
 	signal(SIGALRM, sig_handler);
 	signal(SIGINT, sig_handler);
 	ping_host(&g_env);
-	//display_footer(&g_env);
 	freeaddrinfo(g_env.addr);
 	return 0;
 }

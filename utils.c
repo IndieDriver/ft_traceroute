@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/06 18:40:42 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/08 20:39:11 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/09 16:57:15 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,8 +44,24 @@ void		sig_handler(int s)
 	if (s == SIGALRM)
 		g_env.has_timeout = 1;
 	if (s == SIGINT)
-	{
 		exit(0);
-		//display_footer(&g_env);
-	}
+}
+
+int			is_same_host(struct sockaddr_in *addr1, struct sockaddr_in *addr2)
+{
+	char ip1[INET_ADDRSTRLEN];
+	char ip2[INET_ADDRSTRLEN];
+
+	ft_memset(ip1, 0,sizeof(ip1));
+	ft_memset(ip2, 0,sizeof(ip2));
+	if (!addr1 || !addr2)
+		return (0);
+	inet_ntop(addr1->sin_family,
+				&(addr1->sin_addr), ip1, sizeof(ip1));
+	inet_ntop(addr2->sin_family,
+				&(addr2->sin_addr), ip2, sizeof(ip2));
+	//printf("%s|%s\n", ip1, ip2);
+	if (ft_strcmp(ip1, ip2) == 0)
+		return (1);
+	return (0);
 }
