@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/05 16:49:46 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/09 17:32:45 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/09 19:34:22 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,8 +88,17 @@ int		ping_receive(t_env *e, struct timeval send_time, uint16_t sequence)
 	{
 		e->has_timeout = 0;
 		alarm(0);
-		display_response(e, sequence, NULL);
-		return (1);
+		for (int i = 0; i < 3; i++)
+		{
+			if (!e->result[i].has_completed)
+			{
+				e->result[i].has_completed = 1;
+				e->result[i].res = 0;
+				break ;
+			}
+		}
+		//display_response(e, sequence, NULL);
+		return (has_results(e));
 	}
 	fromlen = sizeof(struct sockaddr_storage);
 	if ((byte_recv = recvfrom(e->socket, &received, sizeof(t_rpacket),
@@ -97,14 +106,28 @@ int		ping_receive(t_env *e, struct timeval send_time, uint16_t sequence)
 	{
 		if (received.icmp.icmp_type == ICMP_ECHO)
 			return (0);
-		display_response(e, sequence, (struct sockaddr_in*)&sender);
+		//display_response(e, sequence, (struct sockaddr_in*)&sender);
+		for (int i = 0; i < 3; i++)
+		{
+			if (!e->result[i].has_completed)
+			{
+				e->result[i].has_completed = 1;
+				e->result[i].res = 1.0;
+				e->result[i].addr = sender;
+				//e->result[i].addr = ft_memcpy(
+				break ;
+			}
+		}
 		if (received.icmp.icmp_type == ICMP_ECHOREPLY)
-			exit(0);
+		{
+			e->end = 1;
+			//exit(0);
+		}
 		alarm(0);
-		ft_sleep(1);
-		return (1);
+		//ft_sleep(1);
+		return (has_results(e));
 	}
-	return (0);
+	return (has_results(e));
 }
 
 void	ping_host(t_env *e)
@@ -115,20 +138,26 @@ void	ping_host(t_env *e)
 	sequence = 0;
 	gettimeofday (&e->start_time, NULL);
 	ping_connect(e);
-	while (sequence <= 30)
+	while (sequence < e->flag.max_hop)
 	{
 		sequence++;
+		ft_memset(e->result, 0, sizeof(e->result));
+		ping_send(e, &send_time, (uint16_t)sequence, sequence);
+		ping_send(e, &send_time, (uint16_t)sequence, sequence);
 		ping_send(e, &send_time, (uint16_t)sequence, sequence);
 		alarm(1);
 		while (!ping_receive(e, send_time, sequence))
 			;
+		display_response(e, sequence);
+		if (e->end)
+			exit(0);
 	}
 }
 
 int main(int argc, char *argv[])
 {
 	ft_memset(&g_env, 0, sizeof(t_env));
-	g_env.ping_min = 1000.0;
+	g_env.flag.max_hop = 30;
 	get_opt(&g_env, argc, argv);
 	if (getuid() != 0)
 	{

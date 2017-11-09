@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/06 18:40:42 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/09 16:57:15 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/09 18:54:42 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,4 +64,16 @@ int			is_same_host(struct sockaddr_in *addr1, struct sockaddr_in *addr2)
 	if (ft_strcmp(ip1, ip2) == 0)
 		return (1);
 	return (0);
+}
+
+int			has_results(t_env *e)
+{
+	for (int i = 0; i < 3; i++)
+	{
+		if (!e->result[i].has_completed)
+		{
+			return (0);
+		}
+	}
+	return (1);
 }

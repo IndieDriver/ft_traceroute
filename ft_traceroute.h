@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/05 16:50:28 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/09 12:30:40 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/09 18:56:06 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,13 @@
 # define XV(err,res,str) (x_void(err,res,str,__FILE__))
 # define X(err,res,str) (x_int(err,res,str,__FILE__))
 
+typedef	struct				s_result
+{
+	int						has_completed;
+	double					res;
+	struct sockaddr_storage	addr;
+}							t_result;
+
 typedef struct				s_env
 {
 	char					*hostname;
@@ -42,28 +49,27 @@ typedef struct				s_env
 	struct addrinfo			*addr;
 	struct {
 		int					help;
+		int					max_hop;
 	}	flag;
 	int						has_timeout;
 	int						sent;
 	int						received;
 	struct timeval			start_time;
-	double					ping_min;
-	double					ping_max;
-	double					sum;
-	double					sum_square;
+	t_result				result[3];
+	int						end;
 }							t_env;
 
 typedef struct				s_packet
 {
 	struct icmp				icmp;
-	uint8_t					data[36];
+	uint8_t					data[38];
 }							t_packet;
 
 typedef struct				s_rpacket
 {
 	struct iphdr			ipheader;
 	struct icmp				icmp;
-	uint8_t					data[36];
+	uint8_t					data[38];
 }							t_rpacket;
 
 t_env						g_env;
@@ -77,7 +83,7 @@ void						hexdump(void *mem, unsigned int len);
 void						get_opt(t_env *e, int argc, char **argv);
 
 void						display_header_info(t_env *env);
-void						display_response(t_env *e, int ttl, struct sockaddr_in *addr);
+void						display_response(t_env *e, int ttl);
 
 void						ft_sleep(uint32_t sec);
 uint16_t					swap_byte16_t(uint16_t val);
@@ -85,6 +91,7 @@ double						get_time_elapsed(struct timeval *t1,
 								struct timeval *t2);
 int							is_same_host(struct sockaddr_in *addr1,
 								struct sockaddr_in *addr2);
+int							has_results(t_env *e);
 
 void						sig_handler(int sig);
 
