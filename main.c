@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/05 16:49:46 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/10 14:38:13 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/10 18:21:47 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ void	get_sockaddr(t_env *e, const char *addr)
 	hints.ai_next = NULL;
 	s = getaddrinfo(addr, NULL, &hints, &result);
 	if (s != 0) {
-		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
+		fprintf(stderr, "traceroute: unknow host %s\n", addr);
 		exit(EXIT_FAILURE);
 	}
 	for (rp = result; rp != NULL; rp = rp->ai_next) {
@@ -85,7 +85,6 @@ int		ping_receive(t_env *e)
 	has_finish = 0;
 	if (e->has_timeout)
 	{
-		//e->has_timeout = 0;
 		alarm(0);
 		for (int i = 0; i < 3; i++)
 		{
