@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/05 16:49:46 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/09 19:34:22 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/10 14:38:13 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,8 +48,6 @@ void	get_sockaddr(t_env *e, const char *addr)
 void	ping_connect(t_env *e)
 {
 	e->socket = X(-1, socket(PF_INET, SOCK_RAW, IPPROTO_ICMP), "socket");
-	//res = setsockopt(e->socket, IPPROTO_IP, IP_TTL, &e->flag.ttl,
-	//		sizeof(e->flag.ttl));
 }
 
 void	ping_send(t_env *e, struct timeval *send_time, uint16_t sequence, uint32_t ttl)
@@ -75,18 +73,19 @@ void	ping_send(t_env *e, struct timeval *send_time, uint16_t sequence, uint32_t 
 	gettimeofday (send_time, NULL);
 }
 
-int		ping_receive(t_env *e, struct timeval send_time, uint16_t sequence)
+int		ping_receive(t_env *e)
 {
 	struct sockaddr_storage	sender;
 	socklen_t				fromlen;
 	t_rpacket				received;
+	struct timeval			received_time;
 	int						byte_recv;
+	int						has_finish;
 
-	(void)send_time;
-	(void)sequence;
+	has_finish = 0;
 	if (e->has_timeout)
 	{
-		e->has_timeout = 0;
+		//e->has_timeout = 0;
 		alarm(0);
 		for (int i = 0; i < 3; i++)
 		{
@@ -97,8 +96,12 @@ int		ping_receive(t_env *e, struct timeval send_time, uint16_t sequence)
 				break ;
 			}
 		}
-		//display_response(e, sequence, NULL);
-		return (has_results(e));
+		has_finish = has_results(e);
+		if (has_finish)
+		{
+			e->has_timeout = 0;
+		}
+		return (has_finish);
 	}
 	fromlen = sizeof(struct sockaddr_storage);
 	if ((byte_recv = recvfrom(e->socket, &received, sizeof(t_rpacket),
@@ -106,25 +109,23 @@ int		ping_receive(t_env *e, struct timeval send_time, uint16_t sequence)
 	{
 		if (received.icmp.icmp_type == ICMP_ECHO)
 			return (0);
-		//display_response(e, sequence, (struct sockaddr_in*)&sender);
 		for (int i = 0; i < 3; i++)
 		{
 			if (!e->result[i].has_completed)
 			{
+				gettimeofday(&received_time, NULL);
 				e->result[i].has_completed = 1;
-				e->result[i].res = 1.0;
+				e->result[i].res = get_time_elapsed(&e->result[i].send_time,
+						&received_time);
 				e->result[i].addr = sender;
-				//e->result[i].addr = ft_memcpy(
 				break ;
 			}
 		}
 		if (received.icmp.icmp_type == ICMP_ECHOREPLY)
 		{
 			e->end = 1;
-			//exit(0);
 		}
 		alarm(0);
-		//ft_sleep(1);
 		return (has_results(e));
 	}
 	return (has_results(e));
@@ -133,7 +134,6 @@ int		ping_receive(t_env *e, struct timeval send_time, uint16_t sequence)
 void	ping_host(t_env *e)
 {
 	int sequence;
-	struct timeval send_time;
 
 	sequence = 0;
 	gettimeofday (&e->start_time, NULL);
@@ -142,11 +142,11 @@ void	ping_host(t_env *e)
 	{
 		sequence++;
 		ft_memset(e->result, 0, sizeof(e->result));
-		ping_send(e, &send_time, (uint16_t)sequence, sequence);
-		ping_send(e, &send_time, (uint16_t)sequence, sequence);
-		ping_send(e, &send_time, (uint16_t)sequence, sequence);
+		ping_send(e, &e->result[0].send_time, (uint16_t)sequence, sequence);
+		ping_send(e, &e->result[1].send_time, (uint16_t)sequence, sequence);
+		ping_send(e, &e->result[2].send_time, (uint16_t)sequence, sequence);
 		alarm(1);
-		while (!ping_receive(e, send_time, sequence))
+		while (!ping_receive(e))
 			;
 		display_response(e, sequence);
 		if (e->end)
@@ -169,6 +169,5 @@ int main(int argc, char *argv[])
 	signal(SIGALRM, sig_handler);
 	signal(SIGINT, sig_handler);
 	ping_host(&g_env);
-	freeaddrinfo(g_env.addr);
 	return 0;
 }

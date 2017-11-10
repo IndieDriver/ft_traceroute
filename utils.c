@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/06 18:40:42 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/09 18:54:42 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/10 11:48:17 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,7 +60,6 @@ int			is_same_host(struct sockaddr_in *addr1, struct sockaddr_in *addr2)
 				&(addr1->sin_addr), ip1, sizeof(ip1));
 	inet_ntop(addr2->sin_family,
 				&(addr2->sin_addr), ip2, sizeof(ip2));
-	//printf("%s|%s\n", ip1, ip2);
 	if (ft_strcmp(ip1, ip2) == 0)
 		return (1);
 	return (0);

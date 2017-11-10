@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/05 16:50:28 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/09 18:56:06 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/10 09:45:54 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,7 @@ typedef	struct				s_result
 	int						has_completed;
 	double					res;
 	struct sockaddr_storage	addr;
+	struct timeval			send_time;
 }							t_result;
 
 typedef struct				s_env
