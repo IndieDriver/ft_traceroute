@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/05 16:49:46 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/12 13:27:30 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/12 14:11:21 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,20 +110,23 @@ int		ping_receive(t_env *e)
 			return (0);
 		if (received.icmp.icmp_type == ICMP_ECHOREPLY && received.icmp.icmp_id == e->pid_be)
 			e->end = 1;
-		for (int i = 0; i < 3; i++)
+		if (received.icmp.icmp_type == ICMP_TIME_EXCEEDED || received.icmp.icmp_type == ICMP_ECHOREPLY)
 		{
-			if (!e->result[i].has_completed)
+			for (int i = 0; i < 3; i++)
 			{
-				gettimeofday(&received_time, NULL);
-				e->result[i].has_completed = 1;
-				e->result[i].res = get_time_elapsed(&e->result[i].send_time,
-						&received_time);
-				e->result[i].addr = sender;
-				break ;
+				if (!e->result[i].has_completed)
+				{
+					gettimeofday(&received_time, NULL);
+					e->result[i].has_completed = 1;
+					e->result[i].res = get_time_elapsed(&e->result[i].send_time,
+							&received_time);
+					e->result[i].addr = sender;
+					break ;
+				}
 			}
+			alarm(0);
+			return (has_results(e));
 		}
-		alarm(0);
-		return (has_results(e));
 	}
 	return (has_results(e));
 }
