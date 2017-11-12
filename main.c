@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/05 16:49:46 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/10 18:21:47 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/12 13:27:30 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,7 +57,7 @@ void	ping_send(t_env *e, struct timeval *send_time, uint16_t sequence, uint32_t 
 	ft_memset(&packet, 0, sizeof(t_packet));
 	packet.icmp.icmp_type = (uint8_t)ICMP_ECHO;
 	packet.icmp.icmp_code = (uint8_t)0;
-	packet.icmp.icmp_id = swap_byte16_t((uint16_t)getpid());
+	packet.icmp.icmp_id = e->pid_be;
 	packet.icmp.icmp_seq = swap_byte16_t((uint16_t)sequence);
 	for (int i = 0; i < 36; i++)
 		packet.data[i] = 10 + i;
@@ -108,6 +108,8 @@ int		ping_receive(t_env *e)
 	{
 		if (received.icmp.icmp_type == ICMP_ECHO)
 			return (0);
+		if (received.icmp.icmp_type == ICMP_ECHOREPLY && received.icmp.icmp_id == e->pid_be)
+			e->end = 1;
 		for (int i = 0; i < 3; i++)
 		{
 			if (!e->result[i].has_completed)
@@ -119,10 +121,6 @@ int		ping_receive(t_env *e)
 				e->result[i].addr = sender;
 				break ;
 			}
-		}
-		if (received.icmp.icmp_type == ICMP_ECHOREPLY)
-		{
-			e->end = 1;
 		}
 		alarm(0);
 		return (has_results(e));
@@ -157,13 +155,14 @@ int main(int argc, char *argv[])
 {
 	ft_memset(&g_env, 0, sizeof(t_env));
 	g_env.flag.max_hop = 30;
-	get_opt(&g_env, argc, argv);
 	if (getuid() != 0)
 	{
 		fprintf(stderr, "Command need to be run as root\n");
 		exit(1);
 	}
+	get_opt(&g_env, argc, argv);
 	get_sockaddr(&g_env, g_env.hostname);
+	g_env.pid_be = swap_byte16_t(getpid());
 	display_header_info(&g_env);
 	signal(SIGALRM, sig_handler);
 	signal(SIGINT, sig_handler);
