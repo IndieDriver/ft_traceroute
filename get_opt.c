@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/06 10:21:03 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/13 11:43:00 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/13 14:10:08 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@ void	print_help()
 					"  -m max_ttl: max ttl\n"
 					"  -f first_ttl: first ttl\n"
 					"  -n: numeric mode\n"
+					"  -I: numeric mode\n"
 					);
 	exit(0);
 }
@@ -59,6 +60,8 @@ void	get_opt(t_env *e, int argc, char **argv)
 								   next = 1;
 								   break;
 						case 'n' : e->flag.numeric_mode = 1;
+								   break;
+						case 'I' : e->flag.icmp_mode = 1;
 								   break;
 						default :
 							printf ("Bad switch %c, ignored.\n",*argv[i]);

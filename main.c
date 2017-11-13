@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/05 16:49:46 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/13 11:02:10 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/13 14:30:35 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,9 +20,17 @@ void	get_sockaddr(t_env *e, const char *addr)
 
 	ft_memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_RAW;
+	if (e->flag.icmp_mode)
+	{
+		hints.ai_socktype = SOCK_RAW;
+		hints.ai_protocol = IPPROTO_ICMP;
+	}
+	else
+	{
+		hints.ai_socktype = SOCK_DGRAM;
+		hints.ai_protocol = IPPROTO_UDP;
+	}
 	hints.ai_flags = AI_PASSIVE | AI_CANONNAME;
-	hints.ai_protocol = IPPROTO_ICMP;
 	hints.ai_canonname = NULL;
 	hints.ai_addr = NULL;
 	hints.ai_next = NULL;
@@ -47,12 +55,16 @@ void	get_sockaddr(t_env *e, const char *addr)
 
 void	ping_connect(t_env *e)
 {
-	e->socket = X(-1, socket(PF_INET, SOCK_RAW, IPPROTO_ICMP), "socket");
+	e->icmp_socket = X(-1, socket(PF_INET, SOCK_RAW, IPPROTO_ICMP), "socket");
+	if (!e->flag.icmp_mode)
+		e->udp_socket = X(-1, socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP), "socket");
 }
 
 void	ping_send(t_env *e, struct timeval *send_time, uint16_t sequence, uint32_t ttl)
 {
-	t_packet		packet;
+	t_packet			packet;
+	struct sockaddr_in	dest;
+	int					sock;
 
 	ft_memset(&packet, 0, sizeof(t_packet));
 	packet.icmp.icmp_type = (uint8_t)ICMP_ECHO;
@@ -62,15 +74,36 @@ void	ping_send(t_env *e, struct timeval *send_time, uint16_t sequence, uint32_t 
 	for (int i = 0; i < 36; i++)
 		packet.data[i] = 10 + i;
 	packet.icmp.icmp_cksum = checksum((uint16_t*)&packet, sizeof(t_packet));
-	int res = setsockopt(e->socket, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
+	sock = e->flag.icmp_mode ? e->icmp_socket : e->udp_socket;
+	int res = setsockopt(sock, IPPROTO_IP, IP_TTL,
+			(char*)&ttl, sizeof(char));
 	if (res == -1)
-	{
 		fprintf(stderr, "Can't set TTL\n");
-	}
-	sendto(e->socket, &packet, sizeof(t_packet), 0,
-			e->addr->ai_addr, e->addr->ai_addrlen);
+	ft_memcpy(&dest, e->addr->ai_addr, e->addr->ai_addrlen);
+	if (!e->flag.icmp_mode)
+		dest.sin_port = htons(33453);
+	sendto(sock, &packet, sizeof(t_packet), 0,
+		(struct sockaddr*)&dest, sizeof(struct sockaddr));
 	e->sent++;
 	gettimeofday (send_time, NULL);
+}
+
+void	add_result(t_env *e, struct sockaddr_storage sender)
+{
+	struct timeval			received_time;
+
+	for (int i = 0; i < 3; i++)
+	{
+		if (!e->result[i].has_completed)
+		{
+			gettimeofday(&received_time, NULL);
+			e->result[i].has_completed = 1;
+			e->result[i].res = get_time_elapsed(&e->result[i].send_time,
+					&received_time);
+			e->result[i].addr = sender;
+			break ;
+		}
+	}
 }
 
 int		ping_receive(t_env *e)
@@ -78,7 +111,6 @@ int		ping_receive(t_env *e)
 	struct sockaddr_storage	sender;
 	socklen_t				fromlen;
 	t_rpacket				received;
-	struct timeval			received_time;
 	int						byte_recv;
 	int						has_finish;
 
@@ -103,27 +135,26 @@ int		ping_receive(t_env *e)
 		return (has_finish);
 	}
 	fromlen = sizeof(struct sockaddr_storage);
-	if ((byte_recv = recvfrom(e->socket, &received, sizeof(t_rpacket),
+	if ((byte_recv = recvfrom(e->icmp_socket, &received, sizeof(t_rpacket),
 					MSG_DONTWAIT, (struct sockaddr*)&sender, &fromlen)) > 0)
 	{
-		if (received.icmp.icmp_type == ICMP_ECHO)
-			return (0);
-		if (received.icmp.icmp_type == ICMP_ECHOREPLY && received.icmp.icmp_id == e->pid_be)
-			e->end = 1;
-		if (received.icmp.icmp_type == ICMP_TIME_EXCEEDED || received.icmp.icmp_type == ICMP_ECHOREPLY)
+		if (is_same_host((struct sockaddr_in*)&sender,
+				(struct sockaddr_in*)e->addr->ai_addr))
 		{
-			for (int i = 0; i < 3; i++)
-			{
-				if (!e->result[i].has_completed)
-				{
-					gettimeofday(&received_time, NULL);
-					e->result[i].has_completed = 1;
-					e->result[i].res = get_time_elapsed(&e->result[i].send_time,
-							&received_time);
-					e->result[i].addr = sender;
-					break ;
-				}
-			}
+			e->end = 1;
+			add_result(e, sender);
+			alarm(0);
+			return (has_results(e));
+		}
+		else if (received.icmp.icmp_type == ICMP_ECHO)
+			return (0);
+		else if (received.icmp.icmp_type == ICMP_ECHOREPLY
+				&& received.icmp.icmp_id == e->pid_be)
+			e->end = 1;
+		if (received.icmp.icmp_type == ICMP_TIME_EXCEEDED
+				|| received.icmp.icmp_type == ICMP_ECHOREPLY)
+		{
+			add_result(e, sender);
 			alarm(0);
 			return (has_results(e));
 		}

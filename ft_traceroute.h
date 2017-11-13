@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/05 16:50:28 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/13 11:14:55 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/13 14:13:41 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,8 @@ typedef struct				s_env
 {
 	char					*hostname;
 	char					*ip;
-	int						socket;
+	int						udp_socket;
+	int						icmp_socket;
 	int						pid_be;
 	struct addrinfo			*addr;
 	struct {
@@ -54,6 +55,7 @@ typedef struct				s_env
 		int					max_hop;
 		int					start_ttl;
 		int					numeric_mode;
+		int					icmp_mode;
 	}	flag;
 	int						has_timeout;
 	int						sent;
