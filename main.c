@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/05 16:49:46 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/13 14:30:35 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/13 14:53:58 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,7 +81,7 @@ void	ping_send(t_env *e, struct timeval *send_time, uint16_t sequence, uint32_t 
 		fprintf(stderr, "Can't set TTL\n");
 	ft_memcpy(&dest, e->addr->ai_addr, e->addr->ai_addrlen);
 	if (!e->flag.icmp_mode)
-		dest.sin_port = htons(33453);
+		dest.sin_port = htons(e->flag.start_port++);
 	sendto(sock, &packet, sizeof(t_packet), 0,
 		(struct sockaddr*)&dest, sizeof(struct sockaddr));
 	e->sent++;
@@ -191,6 +191,7 @@ int main(int argc, char *argv[])
 {
 	ft_memset(&g_env, 0, sizeof(t_env));
 	g_env.flag.max_hop = 30;
+	g_env.flag.start_port = 33453;
 	if (getuid() != 0)
 	{
 		fprintf(stderr, "Command need to be run as root\n");

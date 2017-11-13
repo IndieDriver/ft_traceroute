@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/05 16:50:28 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/13 14:13:41 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/13 14:52:25 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,6 +56,7 @@ typedef struct				s_env
 		int					start_ttl;
 		int					numeric_mode;
 		int					icmp_mode;
+		int					start_port;
 	}	flag;
 	int						has_timeout;
 	int						sent;

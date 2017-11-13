@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/06 10:21:03 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/13 14:37:01 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/13 14:51:24 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@ void	print_help()
 					"  -f first_ttl: first ttl\n"
 					"  -n: numeric mode\n"
 					"  -I: use ICMP probes\n"
+					"  -p start_port: start port to use (ignored with ICMP probes)\n"
 					);
 	exit(0);
 }
@@ -63,6 +64,10 @@ void	get_opt(t_env *e, int argc, char **argv)
 								   break;
 						case 'I' : e->flag.icmp_mode = 1;
 								   break;
+						case 'p' : get_number(&e->flag.start_port,
+										i, argv[i], argv);
+								   next = 1;
+								   break;
 						default :
 							printf ("Bad switch %c, ignored.\n",*argv[i]);
 					}
@@ -83,12 +88,18 @@ void	get_opt(t_env *e, int argc, char **argv)
 	}
 	if (e->flag.max_hop < 0 || e->flag.max_hop > 255)
 	{
-		fprintf(stderr, "Invalid parameter -h, expected interger between 0 and 255\n");
+		fprintf(stderr, "Invalid parameter -h, expected integer between 0 and 255\n");
 		exit(1);
 	}
 	if (e->flag.start_ttl < 0 || e->flag.start_ttl > 255)
 	{
-		fprintf(stderr, "Invalid parameter -f, expected interger between 0 and 255\n");
+		fprintf(stderr, "Invalid parameter -f, expected integer between 0 and 255\n");
+		exit(1);
+	}
+	if (e->flag.start_port < 0 || e->flag.start_port > 65535)
+	{
+		fprintf(stderr,
+				"Invalid parameter -p, expected integer between 0 and 65535\n");
 		exit(1);
 	}
 
