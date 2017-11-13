@@ -6,7 +6,7 @@
 #    By: amathias <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2015/12/03 11:09:29 by amathias          #+#    #+#              #
-#    Updated: 2017/11/08 20:16:15 by amathias         ###   ########.fr        #
+#    Updated: 2017/11/13 14:39:10 by amathias         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -21,7 +21,7 @@ OBJ = $(SRC:.c=.o)
 NAME = ft_traceroute
 CC = clang
 RM = rm -f
-CFLAGS = -Wall -Werror -Wextra -pedantic -g -fsanitize=undefined
+CFLAGS = -Wall -Werror -Wextra
 
 LIB_PATH = ./libft/
 LIB_NAME = -lft
