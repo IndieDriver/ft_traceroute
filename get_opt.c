@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/06 10:21:03 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/13 14:10:08 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/13 14:37:01 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@ void	print_help()
 					"  -m max_ttl: max ttl\n"
 					"  -f first_ttl: first ttl\n"
 					"  -n: numeric mode\n"
-					"  -I: numeric mode\n"
+					"  -I: use ICMP probes\n"
 					);
 	exit(0);
 }
