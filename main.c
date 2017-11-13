@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/05 16:49:46 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/12 14:11:21 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/13 11:02:10 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -135,7 +135,9 @@ void	ping_host(t_env *e)
 {
 	int sequence;
 
-	sequence = 0;
+	sequence = e->flag.start_ttl;
+	if (sequence != 0)
+		sequence--;
 	gettimeofday (&e->start_time, NULL);
 	ping_connect(e);
 	while (sequence < e->flag.max_hop)
