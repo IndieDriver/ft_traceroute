@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/05 16:49:46 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/13 14:53:58 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/16 19:41:03 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -109,6 +109,7 @@ void	add_result(t_env *e, struct sockaddr_storage sender)
 int		ping_receive(t_env *e)
 {
 	struct sockaddr_storage	sender;
+	struct sockaddr_in		sender_in;
 	socklen_t				fromlen;
 	t_rpacket				received;
 	int						byte_recv;
@@ -142,6 +143,8 @@ int		ping_receive(t_env *e)
 				(struct sockaddr_in*)e->addr->ai_addr))
 		{
 			e->end = 1;
+			sender_in.sin_addr.s_addr = received.ipheader.saddr;
+			ft_memcpy(&sender, &sender_in, sizeof(struct sockaddr_in));
 			add_result(e, sender);
 			alarm(0);
 			return (has_results(e));
