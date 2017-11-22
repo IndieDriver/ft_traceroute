@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/06 14:44:37 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/22 08:58:41 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/22 09:42:43 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,20 +14,16 @@
 
 void	display_header_info(t_env *e)
 {
-	char ip[INET_ADDRSTRLEN];
+	char *ip = inet_ntoa(((struct sockaddr_in *)e->addr->ai_addr)->sin_addr);
 
-	inet_ntop(e->addr->ai_family,
-			&((struct sockaddr_in *)e->addr->ai_addr)->sin_addr, ip, sizeof(ip));
 	printf("traceroute to %s (%s), %d hops max, %lu byte packets\n", e->hostname, ip,
 			e->flag.max_hop, sizeof(t_rpacket) - sizeof(struct icmp));
 }
 
 void	display_address(int numeric_mode, struct sockaddr_in *addr)
 {
-	char ip[INET_ADDRSTRLEN];
+	char *ip = inet_ntoa(addr->sin_addr);
 
-	inet_ntop(addr->sin_family,
-			&(addr->sin_addr), ip, sizeof(ip));
 	if (numeric_mode)
 		printf("%s ", ip);
 	else

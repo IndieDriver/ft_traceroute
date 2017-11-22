@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/05 16:49:46 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/20 19:46:10 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/22 09:36:28 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,9 +55,15 @@ void	get_sockaddr(t_env *e, const char *addr)
 
 void	ping_connect(t_env *e)
 {
+	struct timeval timeout;
+
 	e->icmp_socket = X(-1, socket(PF_INET, SOCK_RAW, IPPROTO_ICMP), "socket");
 	if (!e->flag.icmp_mode)
 		e->udp_socket = X(-1, socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP), "socket");
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 500000;
+
+	setsockopt(e->icmp_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout));
 }
 
 void	ping_send(t_env *e, struct timeval *send_time, uint16_t sequence, uint32_t ttl)
@@ -83,7 +89,7 @@ void	ping_send(t_env *e, struct timeval *send_time, uint16_t sequence, uint32_t 
 	if (!e->flag.icmp_mode)
 		dest.sin_port = htons(e->flag.start_port++);
 	sendto(sock, &packet, sizeof(t_packet), 0,
-		(struct sockaddr*)&dest, sizeof(struct sockaddr));
+			(struct sockaddr*)&dest, sizeof(struct sockaddr));
 	e->sent++;
 	gettimeofday (send_time, NULL);
 }
@@ -115,9 +121,29 @@ int		ping_receive(t_env *e)
 	int						has_finish;
 
 	has_finish = 0;
-	if (e->has_timeout)
+	fromlen = sizeof(struct sockaddr_storage);
+	if ((byte_recv = recvfrom(e->icmp_socket, &received, sizeof(t_rpacket),
+					0, (struct sockaddr*)&sender, &fromlen)) > 0)
 	{
-		alarm(0);
+		if (is_same_host((struct sockaddr_in*)&sender,
+					(struct sockaddr_in*)e->addr->ai_addr))
+		{
+			e->end = 1;
+			add_result(e, sender);
+			return (has_results(e));
+		}
+		else if (received.icmp.icmp_type == ICMP_ECHO)
+			return (0);
+		else if (received.icmp.icmp_type == ICMP_ECHOREPLY
+				&& received.icmp.icmp_id == e->pid_be)
+			e->end = 1;
+		if (received.icmp.icmp_type == ICMP_TIME_EXCEEDED
+				|| received.icmp.icmp_type == ICMP_ECHOREPLY)
+		{
+			add_result(e, sender);
+			return (has_results(e));
+		}
+	} else {
 		for (int i = 0; i < 3; i++)
 		{
 			if (!e->result[i].has_completed)
@@ -133,31 +159,7 @@ int		ping_receive(t_env *e)
 			e->has_timeout = 0;
 		}
 		return (has_finish);
-	}
-	fromlen = sizeof(struct sockaddr_storage);
-	if ((byte_recv = recvfrom(e->icmp_socket, &received, sizeof(t_rpacket),
-					MSG_DONTWAIT, (struct sockaddr*)&sender, &fromlen)) > 0)
-	{
-		if (is_same_host((struct sockaddr_in*)&sender,
-				(struct sockaddr_in*)e->addr->ai_addr))
-		{
-			e->end = 1;
-			add_result(e, sender);
-			alarm(0);
-			return (has_results(e));
-		}
-		else if (received.icmp.icmp_type == ICMP_ECHO)
-			return (0);
-		else if (received.icmp.icmp_type == ICMP_ECHOREPLY
-				&& received.icmp.icmp_id == e->pid_be)
-			e->end = 1;
-		if (received.icmp.icmp_type == ICMP_TIME_EXCEEDED
-				|| received.icmp.icmp_type == ICMP_ECHOREPLY)
-		{
-			add_result(e, sender);
-			alarm(0);
-			return (has_results(e));
-		}
+
 	}
 	return (has_results(e));
 }
@@ -178,7 +180,6 @@ void	ping_host(t_env *e)
 		ping_send(e, &e->result[0].send_time, (uint16_t)sequence, sequence);
 		ping_send(e, &e->result[1].send_time, (uint16_t)sequence, sequence);
 		ping_send(e, &e->result[2].send_time, (uint16_t)sequence, sequence);
-		alarm(1);
 		while (!ping_receive(e))
 			;
 		display_response(e, sequence);
@@ -201,8 +202,6 @@ int main(int argc, char *argv[])
 	get_sockaddr(&g_env, g_env.hostname);
 	g_env.pid_be = swap_byte16_t(getpid());
 	display_header_info(&g_env);
-	signal(SIGALRM, sig_handler);
-	signal(SIGINT, sig_handler);
 	ping_host(&g_env);
 	return 0;
 }

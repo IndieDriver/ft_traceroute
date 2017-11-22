@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/05 17:32:03 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/08 20:15:19 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/22 09:54:22 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@ int		x_int(int err, int res, char *str, char *file)
 {
 	if (res == err)
 	{
-		printf("%s error(%s): %s\n", str, file, strerror(errno));
+		printf("%s error(%s)\n", str, file);
 		exit(1);
 	}
 	return (res);
@@ -30,7 +30,7 @@ void	*x_void(void *err, void *res, char *str, char *file)
 {
 	if (res == err)
 	{
-		printf("%s error(%s): %s\n", str, file, strerror(errno));
+		printf("%s error(%s)\n", str, file);
 		exit(1);
 	}
 	return (res);
@@ -53,13 +53,13 @@ void hexdump(void *mem, unsigned int len)
 			for(j = i - (8 - 1); j <= i; j++)
 			{
 				if(j >= len)
-					putchar(' ');
+					ft_putchar(' ');
 				else if(ft_isprint(((char*)mem)[j]))
-					putchar(0xFF & ((char*)mem)[j]);
+					ft_putchar(0xFF & ((char*)mem)[j]);
 				else /* other char */
-					putchar('.');
+					ft_putchar('.');
 			}
-			putchar('\n');
+			ft_putchar('\n');
 		}
 	}
 }
