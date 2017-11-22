@@ -6,7 +6,7 @@
 /*   By: amathias </var/spool/mail/amathias>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/06 14:44:37 by amathias          #+#    #+#             */
-/*   Updated: 2017/11/13 11:17:11 by amathias         ###   ########.fr       */
+/*   Updated: 2017/11/22 08:58:41 by amathias         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,12 +34,25 @@ void	display_address(int numeric_mode, struct sockaddr_in *addr)
 		printf("%s (%s) ", ip, ip);
 }
 
+int		count_digits(int value)
+{
+	int res;
+
+	res = 0;
+	while (value != 0)
+	{
+		value /= 10;
+		res++;
+	}
+	return (res);
+}
+
 void	display_response(t_env *e, int ttl)
 {
 	struct sockaddr_in		*sock_tmp;
 
 	sock_tmp = NULL;
-	printf("%2d ", ttl);
+	printf("%*d ", count_digits(e->flag.max_hop), ttl);
 	for (int i = 0; i < 3; i++)
 	{
 		if (e->result[i].res != 0.0)
